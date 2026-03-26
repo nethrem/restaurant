@@ -55,15 +55,12 @@ def customer_panel(request):
         cats_data.append({'id': cat.id, 'name': cat.name, 'items': items_data})
 
     # Gallery images — use cover image if set, otherwise item images
+    # Gallery images — only use restaurant cover image
     gallery_images = []
     if restaurant.cover_image:
         gallery_images.append(restaurant.cover_image.url)
-    for cat in categories:
-        for item in cat.items.filter(is_active=True, image__isnull=False):
-            if item.image and item.image.url not in gallery_images:
-                gallery_images.append(item.image.url)
-    # Fallback to stock images if fewer than 2
-    if len(gallery_images) < 2:
+    # Fallback to food stock images if no cover image set
+    if len(gallery_images) < 1:
         gallery_images += [
             'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=500&fit=crop',
             'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=500&fit=crop',
