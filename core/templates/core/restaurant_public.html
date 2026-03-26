@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ restaurant.name }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --amber:#f97316;--amber-d:#c2410c;--amber-l:#fdba74;
+      --cream:#fef3e2;--sand:#faf5eb;--warm:#f5e6d0;
+      --bg:#f8f8f8;--white:#fff;--text:#1a1a1a;--sub:#666;
+      --muted:#999;--border:#e8e8e8;
+      --green:#15803d;--green-bg:rgba(21,128,61,0.1);
+      --red:#dc2626;
+      --radius:12px;
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+    /* ── TOPBAR ── */
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 24px;gap:12px;background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,0.06);}
+    .search-wrap{position:relative;flex:1;max-width:340px;margin-right:auto;}
+    .search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--muted);}
+    .search-input{width:100%;background:var(--sand);border:1.5px solid var(--border);border-radius:10px;padding:9px 14px 9px 38px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+    .search-input:focus{border-color:var(--amber);}
+    .search-input::placeholder{color:var(--muted);}
+    .cart-btn{display:flex;align-items:center;gap:8px;padding:9px 18px;background:linear-gradient(135deg,var(--amber-d),var(--amber));color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(249,115,22,0.3);transition:all .15s;white-space:nowrap;}
+    .cart-btn:hover{opacity:.9;}
+    .cart-count{background:rgba(255,255,255,0.25);border-radius:20px;padding:1px 8px;font-size:12px;font-weight:700;}
+
+    /* ── HERO ── */
+    .hero{position:relative;height:420px;overflow:hidden;margin-top:56px;}
+    .hero-img{width:100%;height:100%;object-fit:cover;}
+    .hero-placeholder{width:100%;height:100%;background:linear-gradient(135deg,#3d1f0a 0%,#7c3a1f 50%,#c2410c 100%);display:flex;align-items:center;justify-content:center;font-size:80px;}
+    .hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,rgba(0,0,0,0.1) 60%,transparent 100%);}
+    .hero-content{position:absolute;bottom:32px;left:32px;color:#fff;}
+    .hero-name{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:700;line-height:1.1;text-shadow:0 2px 12px rgba(0,0,0,0.4);}
+
+    /* ── INFO STRIP ── */
+    .info-strip{background:var(--white);border-bottom:1px solid var(--border);padding:20px 32px;}
+    .info-tags{font-size:14px;color:var(--amber-d);font-weight:600;margin-bottom:10px;font-style:italic;}
+    .info-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;font-size:13.5px;color:var(--sub);}
+    .info-meta-item{display:flex;align-items:center;gap:6px;}
+    .info-meta-sep{color:var(--border);}
+    .info-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-bg);color:var(--green);border:1px solid rgba(21,128,61,0.2);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+
+    /* ── CATEGORY PILLS ── */
+    .cat-pills-wrap{background:var(--white);border-bottom:1px solid var(--border);padding:14px 32px;position:sticky;top:56px;z-index:50;overflow-x:auto;}
+    .cat-pills{display:flex;gap:8px;white-space:nowrap;}
+    .cat-pill{padding:8px 18px;border-radius:20px;font-size:13.5px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--sub);transition:all .15s;}
+    .cat-pill:hover{border-color:var(--amber-l);color:var(--amber-d);}
+    .cat-pill.active{background:var(--amber-d);color:#fff;border-color:var(--amber-d);}
+
+    /* ── MENU ── */
+    .menu-wrap{max-width:1200px;margin:0 auto;padding:32px 24px 120px;}
+    .cat-section{margin-bottom:44px;}
+    .cat-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:var(--text);margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--border);}
+    .items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;}
+    .item-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .2s;}
+    .item-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.1);transform:translateY(-3px);}
+    .item-card-img{height:180px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:42px;overflow:hidden;position:relative;}
+    .item-card-img img{width:100%;height:100%;object-fit:cover;}
+    .item-card-body{padding:14px 16px;}
+    .item-card-name{font-weight:600;font-size:15px;color:var(--text);margin-bottom:5px;}
+    .item-card-desc{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:12px;min-height:32px;}
+    .item-card-footer{display:flex;align-items:center;justify-content:space-between;}
+    .item-card-price{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--text);}
+    .item-card-price .old-price{font-size:14px;color:var(--muted);text-decoration:line-through;margin-right:6px;font-family:'DM Sans',sans-serif;font-weight:400;}
+    .add-btn{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--amber-d),var(--amber));color:#fff;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(249,115,22,0.35);transition:all .15s;}
+    .add-btn:hover{transform:scale(1.1);}
+
+    /* ── CART DRAWER ── */
+    .cart-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;}
+    .cart-ov.open{display:block;}
+    .cart-drawer{position:fixed;top:0;right:0;bottom:0;width:380px;background:#fff;z-index:301;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s ease;box-shadow:-8px 0 40px rgba(0,0,0,.15);}
+    .cart-drawer.open{transform:translateX(0);}
+    .cart-hdr{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .cart-hdr-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;}
+    .cart-close{width:32px;height:32px;border-radius:8px;background:var(--sand);border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--sub);}
+    .cart-items{flex:1;overflow-y:auto;padding:16px 22px;}
+    .cart-empty{text-align:center;padding:48px 20px;color:var(--muted);}
+    .cart-empty-ico{font-size:44px;margin-bottom:12px;opacity:.4;}
+    .cart-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+    .cart-item:last-child{border-bottom:none;}
+    .ci-img{width:56px;height:56px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden;}
+    .ci-img img{width:100%;height:100%;object-fit:cover;}
+    .ci-info{flex:1;min-width:0;}
+    .ci-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .ci-price{font-size:13px;color:var(--amber-d);font-weight:600;margin-top:2px;}
+    .ci-qty{display:flex;align-items:center;gap:8px;margin-top:8px;}
+    .qty-btn{width:26px;height:26px;border-radius:6px;border:1.5px solid var(--border);background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all .15s;}
+    .qty-btn:hover{border-color:var(--amber);color:var(--amber-d);}
+    .qty-val{font-size:14px;font-weight:600;min-width:20px;text-align:center;}
+    .ci-total{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--text);align-self:center;white-space:nowrap;}
+    .cart-footer{padding:16px 22px;border-top:1px solid var(--border);}
+    .cart-summary{margin-bottom:14px;}
+    .cart-row{display:flex;justify-content:space-between;font-size:13.5px;color:var(--sub);margin-bottom:6px;}
+    .cart-row.total{font-size:16px;font-weight:700;color:var(--text);padding-top:10px;border-top:1px solid var(--border);margin-top:6px;}
+    .cart-row.total span:last-child{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--amber-d);}
+    .checkout-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--amber-d),var(--amber));color:#fff;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,0.3);transition:all .15s;}
+    .checkout-btn:hover{opacity:.92;}
+    .checkout-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+    /* ── ITEM MODAL ── */
+    .item-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center;padding:0;}
+    .item-modal-ov.open{display:flex;}
+    .item-modal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease;}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .im-img{height:220px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:60px;overflow:hidden;position:relative;}
+    .im-img img{width:100%;height:100%;object-fit:cover;}
+    .im-body{padding:22px 24px;}
+    .im-name{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;margin-bottom:6px;}
+    .im-desc{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:16px;}
+    .im-price-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+    .im-price{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--amber-d);}
+    .im-old{font-size:16px;color:var(--muted);text-decoration:line-through;}
+    .im-extras{margin-bottom:20px;}
+    .im-extras-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);margin-bottom:10px;}
+    .extra-opt{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;margin-bottom:7px;cursor:pointer;transition:all .15s;}
+    .extra-opt:hover,.extra-opt.sel{border-color:var(--amber);background:#fff7ed;}
+    .extra-opt.sel .eo-check{background:var(--amber-d);border-color:var(--amber-d);color:#fff;}
+    .eo-left{display:flex;align-items:center;gap:10px;}
+    .eo-check{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all .15s;}
+    .eo-name{font-size:14px;font-weight:500;}
+    .eo-price{font-size:13px;color:var(--amber-d);font-weight:600;}
+    .im-footer{display:flex;align-items:center;gap:14px;padding:0 0 8px;}
+    .qty-ctrl{display:flex;align-items:center;gap:10px;background:var(--sand);border-radius:10px;padding:8px 12px;}
+    .qc-btn{width:28px;height:28px;border-radius:7px;border:none;background:var(--white);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+    .qc-val{font-size:16px;font-weight:700;min-width:20px;text-align:center;}
+    .im-add-btn{flex:1;padding:13px;background:linear-gradient(135deg,var(--amber-d),var(--amber));color:#fff;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(249,115,22,0.3);}
+    .im-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.85);border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+
+    /* ── CHECKOUT MODAL ── */
+    .co-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+    .co-ov.open{display:flex;}
+    .co-modal{background:#fff;border-radius:18px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);}
+    .co-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .co-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;}
+    .co-x{width:30px;height:30px;border-radius:8px;background:var(--sand);border:none;cursor:pointer;font-size:15px;}
+    .co-body{padding:20px 24px;}
+    .co-field{margin-bottom:18px;}
+    .co-field label{display:block;font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
+    .co-field input,.co-field textarea,.co-field select{width:100%;background:var(--sand);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+    .co-field input:focus,.co-field select:focus,.co-field textarea:focus{border-color:var(--amber);}
+    .co-field input::placeholder{color:var(--muted);}
+    .co-ftr{padding:16px 24px;border-top:1px solid var(--border);}
+    .co-place-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--amber-d),var(--amber));color:#fff;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,0.3);}
+
+    /* ── SUCCESS ── */
+    .success-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;}
+    .success-ov.open{display:flex;animation:fadeIn .3s ease;}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .success-box{background:#fff;border-radius:20px;padding:44px 36px;text-align:center;max-width:380px;width:100%;}
+    .success-ico{font-size:60px;margin-bottom:16px;}
+    .success-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;margin-bottom:8px;}
+    .success-msg{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:24px;}
+    .success-num{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--amber-d);}
+    .success-close{padding:12px 32px;background:linear-gradient(135deg,var(--amber-d),var(--amber));color:#fff;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+
+    @media(max-width:600px){
+      .cart-drawer{width:100%;}
+      .items-grid{grid-template-columns:1fr 1fr;}
+      .menu-wrap{padding:20px 16px 120px;}
+      .hero{height:280px;}
+      .hero-name{font-size:28px;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input class="search-input" type="text" id="searchInput" placeholder="Search menu..." oninput="searchMenu(this.value)"/>
+  </div>
+  <button class="cart-btn" onclick="openCart()">
+    🛒 CART <span class="cart-count" id="cartCount">0</span>
+  </button>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  {% if restaurant.cover_image %}
+    <img class="hero-img" src="{{ restaurant.cover_image.url }}" alt="{{ restaurant.name }}"/>
+  {% else %}
+    <div class="hero-placeholder">🍽️</div>
+  {% endif %}
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-name">{{ restaurant.name }}</div>
+  </div>
+</div>
+
+<!-- INFO STRIP -->
+<div class="info-strip">
+  {% if restaurant.description %}
+    <div class="info-tags">{{ restaurant.description }}</div>
+  {% endif %}
+  <div class="info-meta">
+    <span class="info-badge">🟢 Open</span>
+    {% if restaurant.address %}<span class="info-meta-sep">|</span><span class="info-meta-item">📍 {{ restaurant.address }}</span>{% endif %}
+    {% if restaurant.phone %}<span class="info-meta-sep">|</span><span class="info-meta-item">📞 {{ restaurant.phone }}</span>{% endif %}
+    {% if restaurant.avg_prepare_time %}<span class="info-meta-sep">|</span><span class="info-meta-item">⏱ ~{{ restaurant.avg_prepare_time }} min</span>{% endif %}
+    {% if restaurant.minimum_order and restaurant.minimum_order > 0 %}<span class="info-meta-sep">|</span><span class="info-meta-item">💰 Min. order ${{ restaurant.minimum_order }}</span>{% endif %}
+  </div>
+</div>
+
+<!-- CATEGORY PILLS -->
+<div class="cat-pills-wrap">
+  <div class="cat-pills">
+    <div class="cat-pill active" onclick="filterCat('all',this)">All categories</div>
+    {% for cat in categories %}
+    <div class="cat-pill" onclick="filterCat('cat-{{ cat.id }}',this)">{{ cat.name }}</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- MENU -->
+<div class="menu-wrap" id="menuWrap">
+  {% for cat in categories %}
+  <div class="cat-section" id="cat-{{ cat.id }}" data-cat="{{ cat.id }}">
+    <div class="cat-title">{{ cat.name }}</div>
+    <div class="items-grid">
+      {% for item in cat.items.all %}
+      {% if item.is_active %}
+      <div class="item-card" onclick="openItem({{ item.id }})"
+           data-id="{{ item.id }}"
+           data-name="{{ item.name|escapejs }}"
+           data-desc="{{ item.description|escapejs }}"
+           data-price="{{ item.price }}"
+           data-disc="{{ item.discounted_price|default:'' }}"
+           data-img="{% if item.image %}{{ item.image.url }}{% endif %}"
+           data-extras="{{ item.extras.all|length }}">
+        <div class="item-card-img">
+          {% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}"/>{% else %}🍽{% endif %}
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-name">{{ item.name }}</div>
+          <div class="item-card-desc">{{ item.description|default:"" }}</div>
+          <div class="item-card-footer">
+            <div class="item-card-price">
+              {% if item.discounted_price %}
+                <span class="old-price">${{ item.price }}</span>${{ item.discounted_price }}
+              {% else %}
+                ${{ item.price }}
+              {% endif %}
+            </div>
+            <button class="add-btn" onclick="event.stopPropagation();quickAdd({{ item.id }})">+</button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- CART DRAWER -->
+<div class="cart-ov" id="cartOv" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-hdr">
+    <div class="cart-hdr-title">Your Cart</div>
+    <button class="cart-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems">
+    <div class="cart-empty"><div class="cart-empty-ico">🛒</div><div>Your cart is empty</div></div>
+  </div>
+  <div class="cart-footer">
+    <div class="cart-summary" id="cartSummary"></div>
+    <button class="checkout-btn" id="checkoutBtn" onclick="openCheckout()" disabled>Place Order</button>
+  </div>
+</div>
+
+<!-- ITEM MODAL -->
+<div class="item-modal-ov" id="itemModalOv" onclick="closeItemModal(event)">
+  <div class="item-modal" id="itemModal">
+    <div class="im-img" id="imImg" style="position:relative;">
+      <button class="im-close" onclick="closeItemModalDirect()">✕</button>
+    </div>
+    <div class="im-body">
+      <div class="im-name" id="imName"></div>
+      <div class="im-desc" id="imDesc"></div>
+      <div class="im-price-row">
+        <div class="im-price" id="imPrice"></div>
+        <div class="im-old" id="imOld"></div>
+      </div>
+      <div class="im-extras" id="imExtras"></div>
+      <div class="im-footer">
+        <div class="qty-ctrl">
+          <button class="qc-btn" onclick="changeQty(-1)">−</button>
+          <div class="qc-val" id="imQty">1</div>
+          <button class="qc-btn" onclick="changeQty(1)">+</button>
+        </div>
+        <button class="im-add-btn" id="imAddBtn" onclick="addFromModal()">Add — $0.00</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="co-ov" id="coOv">
+  <div class="co-modal">
+    <div class="co-hdr">
+      <div class="co-title">Complete your order</div>
+      <button class="co-x" onclick="closeCheckout()">✕</button>
+    </div>
+    <div class="co-body">
+      <div class="co-field"><label>Full Name *</label><input type="text" id="co-name" placeholder="Your name"/></div>
+      <div class="co-field"><label>Phone *</label><input type="tel" id="co-phone" placeholder="+1 555 000 0000"/></div>
+      <div class="co-field"><label>Email <span style="font-weight:400;text-transform:none;">(optional)</span></label><input type="email" id="co-email" placeholder="you@email.com"/></div>
+      {% if restaurant.delivery_areas.all %}
+      <div class="co-field">
+        <label>Delivery Area</label>
+        <select id="co-area">
+          <option value="">— Select delivery area —</option>
+          {% for area in restaurant.delivery_areas.all %}
+          {% if area.is_active %}
+          <option value="{{ area.id }}" data-cost="{{ area.delivery_cost }}">{{ area.name }} — ${{ area.delivery_cost }}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="co-field"><label>Delivery Address</label><input type="text" id="co-address" placeholder="Street, city, zip"/></div>
+      <div class="co-field"><label>Comment / Notes</label><textarea id="co-comment" rows="2" placeholder="Allergies, special requests..."></textarea></div>
+    </div>
+    <div class="co-ftr">
+      <button class="co-place-btn" onclick="placeOrder()">Place Order →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-ov" id="successOv">
+  <div class="success-box">
+    <div class="success-ico">🎉</div>
+    <div class="success-title">Order Placed!</div>
+    <div class="success-msg">Your order has been received. Order number:</div>
+    <div class="success-num" id="successNum">#000</div>
+    <div style="font-size:13px;color:var(--muted);margin:10px 0 24px;">The restaurant will prepare your order shortly.</div>
+    <button class="success-close" onclick="closeSuccess()">Back to Menu</button>
+  </div>
+</div>
+
+<script>
+const RESTAURANT_ID = {{ restaurant.id }};
+const MIN_ORDER = {{ restaurant.minimum_order|default:"0" }};
+
+// Build item data map from DOM
+const ITEMS = {};
+document.querySelectorAll('.item-card').forEach(el => {
+  const id = parseInt(el.dataset.id);
+  ITEMS[id] = {
+    id, name: el.dataset.name, desc: el.dataset.desc,
+    price: parseFloat(el.dataset.price),
+    disc: el.dataset.disc ? parseFloat(el.dataset.disc) : null,
+    img: el.dataset.img,
+    extras: [],
+  };
+});
+
+// Load extras via embedded JSON (server-side rendered)
+const EXTRAS_DATA = {
+  {% for cat in categories %}{% for item in cat.items.all %}{% if item.is_active %}
+  {{ item.id }}: [{% for ex in item.extras.all %}{"id":{{ ex.id }},"name":"{{ ex.name|escapejs }}","price":{{ ex.price }}}{% if not forloop.last %},{% endif %}{% endfor %}],
+  {% endif %}{% endfor %}{% endfor %}
+};
+
+let cart = {};
+let modalItem = null, modalQty = 1, selExtras = [];
+
+// ── Cart helpers ──
+function effectivePrice(item, extras=[]) {
+  const base = item.disc !== null ? item.disc : item.price;
+  return base + extras.reduce((s,e) => s + e.price, 0);
+}
+
+function cartCount() { return Object.values(cart).reduce((s,c) => s + c.qty, 0); }
+function cartSubtotal() {
+  return Object.values(cart).reduce((s,c) => s + effectivePrice(ITEMS[c.id], c.extras) * c.qty, 0);
+}
+
+function updateCartUI() {
+  const count = cartCount();
+  document.getElementById('cartCount').textContent = count;
+  const items = document.getElementById('cartItems');
+  const btn = document.getElementById('checkoutBtn');
+  const summary = document.getElementById('cartSummary');
+
+  if (count === 0) {
+    items.innerHTML = `<div class="cart-empty"><div class="cart-empty-ico">🛒</div><div>Your cart is empty</div></div>`;
+    summary.innerHTML = '';
+    btn.disabled = true;
+    return;
+  }
+  btn.disabled = false;
+
+  let html = '';
+  Object.values(cart).forEach(c => {
+    const it = ITEMS[c.id];
+    const ep = effectivePrice(it, c.extras);
+    const imgH = it.img ? `<img src="${it.img}" alt="${it.name}"/>` : '🍽';
+    const extrasNote = c.extras.length ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">+ ${c.extras.map(e=>e.name).join(', ')}</div>` : '';
+    html += `<div class="cart-item">
+      <div class="ci-img">${imgH}</div>
+      <div class="ci-info">
+        <div class="ci-name">${it.name}</div>
+        ${extrasNote}
+        <div class="ci-price">$${ep.toFixed(2)}</div>
+        <div class="ci-qty">
+          <button class="qty-btn" onclick="adjCart('${c.key}',-1)">−</button>
+          <div class="qty-val">${c.qty}</div>
+          <button class="qty-btn" onclick="adjCart('${c.key}',1)">+</button>
+        </div>
+      </div>
+      <div class="ci-total">$${(ep*c.qty).toFixed(2)}</div>
+    </div>`;
+  });
+  items.innerHTML = html;
+
+  const sub = cartSubtotal();
+  const delivCost = getDelivCost();
+  summary.innerHTML = `
+    <div class="cart-row"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
+    ${delivCost > 0 ? `<div class="cart-row"><span>Delivery</span><span>$${delivCost.toFixed(2)}</span></div>` : ''}
+    <div class="cart-row total"><span>Total</span><span>$${(sub+delivCost).toFixed(2)}</span></div>`;
+}
+
+function getDelivCost() {
+  const sel = document.getElementById('co-area');
+  if (!sel) return 0;
+  const opt = sel.options[sel.selectedIndex];
+  return opt && opt.dataset.cost ? parseFloat(opt.dataset.cost) : 0;
+}
+
+function adjCart(key, d) {
+  if (!cart[key]) return;
+  cart[key].qty += d;
+  if (cart[key].qty <= 0) delete cart[key];
+  updateCartUI();
+}
+
+function openCart() {
+  document.getElementById('cartOv').classList.add('open');
+  document.getElementById('cartDrawer').classList.add('open');
+}
+function closeCart() {
+  document.getElementById('cartOv').classList.remove('open');
+  document.getElementById('cartDrawer').classList.remove('open');
+}
+
+// Quick add (no extras)
+function quickAdd(id) {
+  const it = ITEMS[id];
+  const key = `${id}_plain`;
+  if (!cart[key]) cart[key] = {id, key, qty:0, extras:[]};
+  cart[key].qty++;
+  updateCartUI();
+}
+
+// ── Item Modal ──
+function openItem(id) {
+  const it = ITEMS[id];
+  if (!it) return;
+  modalItem = it; modalQty = 1; selExtras = [];
+  const extras = EXTRAS_DATA[id] || [];
+
+  const imgH = it.img ? `<img src="${it.img}" alt="${it.name}" style="width:100%;height:100%;object-fit:cover;"/>`
+                      : `<span style="font-size:60px;">🍽</span>`;
+  document.getElementById('imImg').innerHTML = `<button class="im-close" onclick="closeItemModalDirect()">✕</button>${imgH}`;
+  document.getElementById('imName').textContent = it.name;
+  document.getElementById('imDesc').textContent = it.desc;
+  document.getElementById('imPrice').textContent = `$${(it.disc !== null ? it.disc : it.price).toFixed(2)}`;
+  document.getElementById('imOld').textContent = it.disc !== null ? `$${it.price.toFixed(2)}` : '';
+  document.getElementById('imQty').textContent = 1;
+
+  // Extras
+  let extHTML = '';
+  if (extras.length) {
+    extHTML = `<div class="im-extras-title">Extras (optional)</div>`;
+    extras.forEach(ex => {
+      extHTML += `<div class="extra-opt" id="eo-${ex.id}" onclick="toggleExtra(${ex.id},'${ex.name.replace(/'/g,"\\'")}',${ex.price})">
+        <div class="eo-left"><div class="eo-check" id="eoC-${ex.id}"></div><div class="eo-name">${ex.name}</div></div>
+        <div class="eo-price">+$${parseFloat(ex.price).toFixed(2)}</div>
+      </div>`;
+    });
+  }
+  document.getElementById('imExtras').innerHTML = extHTML;
+  updateModalBtn();
+  document.getElementById('itemModalOv').classList.add('open');
+}
+
+function toggleExtra(id, name, price) {
+  const idx = selExtras.findIndex(e=>e.id===id);
+  if (idx>=0) selExtras.splice(idx,1);
+  else selExtras.push({id,name,price});
+  document.getElementById(`eo-${id}`)?.classList.toggle('sel', idx<0);
+  document.getElementById(`eoC-${id}`)?.innerHTML = idx<0 ? '✓' : '';
+  updateModalBtn();
+}
+
+function changeQty(d) {
+  modalQty = Math.max(1, modalQty+d);
+  document.getElementById('imQty').textContent = modalQty;
+  updateModalBtn();
+}
+
+function updateModalBtn() {
+  if (!modalItem) return;
+  const ep = effectivePrice(modalItem, selExtras);
+  document.getElementById('imAddBtn').textContent = `Add — $${(ep*modalQty).toFixed(2)}`;
+}
+
+function addFromModal() {
+  if (!modalItem) return;
+  const key = `${modalItem.id}_${selExtras.map(e=>e.id).sort().join('_')}`;
+  if (!cart[key]) cart[key] = {id:modalItem.id, key, qty:0, extras:[...selExtras]};
+  cart[key].qty += modalQty;
+  updateCartUI();
+  closeItemModalDirect();
+}
+
+function closeItemModal(e) { if(e.target===document.getElementById('itemModalOv')) closeItemModalDirect(); }
+function closeItemModalDirect() { document.getElementById('itemModalOv').classList.remove('open'); }
+
+// ── Category filter ──
+function filterCat(catId, pill) {
+  document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
+  pill.classList.add('active');
+  document.querySelectorAll('.cat-section').forEach(s => {
+    s.style.display = (catId==='all' || s.id===catId) ? '' : 'none';
+  });
+}
+
+// ── Search ──
+function searchMenu(q) {
+  q = q.toLowerCase().trim();
+  document.querySelectorAll('.item-card').forEach(card => {
+    const match = !q || card.dataset.name.toLowerCase().includes(q) || card.dataset.desc.toLowerCase().includes(q);
+    card.style.display = match ? '' : 'none';
+  });
+}
+
+// ── Checkout ──
+function openCheckout() { closeCart(); document.getElementById('coOv').classList.add('open'); }
+function closeCheckout() { document.getElementById('coOv').classList.remove('open'); }
+
+async function placeOrder() {
+  const name = document.getElementById('co-name').value.trim();
+  const phone = document.getElementById('co-phone').value.trim();
+  if (!name || !phone) { alert('Name and phone are required.'); return; }
+
+  const areaEl = document.getElementById('co-area');
+  const areaId = areaEl ? (areaEl.value || null) : null;
+
+  const items = Object.values(cart).map(c => ({
+    menu_item_id: c.id, quantity: c.qty,
+    extras: c.extras.map(e=>e.name).join(', '),
+  }));
+
+  const payload = {
+    restaurant_id: RESTAURANT_ID,
+    customer_name: name,
+    customer_phone: phone,
+    customer_email: document.getElementById('co-email')?.value || '',
+    delivery_area_id: areaId,
+    delivery_address: document.getElementById('co-address')?.value || '',
+    comment: document.getElementById('co-comment')?.value || '',
+    items,
+  };
+
+  try {
+    const r = await fetch('/api/place-order/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken': getCsrf()},
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      closeCheckout();
+      document.getElementById('successNum').textContent = '#' + data.order_number;
+      document.getElementById('successOv').classList.add('open');
+      cart = {}; updateCartUI();
+    } else {
+      alert('Error: ' + (data.error || 'Could not place order.'));
+    }
+  } catch(e) {
+    alert('Network error. Please try again.');
+  }
+}
+
+function closeSuccess() { document.getElementById('successOv').classList.remove('open'); }
+
+function getCsrf() {
+  const m = document.cookie.match(/csrftoken=([^;]+)/);
+  return m ? m[1] : '';
+}
+</script>
+</body>
+</html>

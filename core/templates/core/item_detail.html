@@ -1,0 +1,246 @@
+{% extends "core/base.html" %}
+{% block title %}{{ item.name }} — RestoPanel{% endblock %}
+{% block page_title %}{{ item.name }}{% endblock %}
+
+{% block topbar_right %}
+<a class="btn-ghost" href="/owner/menu/">← Menu</a>
+<span class="tag {% if item.is_active %}tag-green{% else %}tag-amber{% endif %}" id="statusTag">{% if item.is_active %}Active{% else %}Paused{% endif %}</span>
+{% endblock %}
+
+{% block extra_styles %}
+  .layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;}
+  .switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:#ddd;border-radius:24px;cursor:pointer;transition:.25s;}
+  .slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  input:checked+.slider{background:var(--accent);}
+  input:checked+.slider::before{transform:translateX(20px);}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+  .toggle-row:last-child{border-bottom:none;padding-bottom:0;}
+  .toggle-lbl{font-size:14px;font-weight:500;color:var(--text);}
+  .toggle-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .img-current{width:100%;height:180px;border-radius:8px;overflow:hidden;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:10px;border:1px solid var(--border);position:relative;}
+  .img-current img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+  .extras-table{width:100%;border-collapse:collapse;}
+  .extras-table th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;padding:0 0 8px;text-align:left;border-bottom:1px solid var(--border);}
+  .extras-table td{padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .extras-table tr:last-child td{border-bottom:none;}
+  .extra-price{font-weight:600;color:var(--text);}
+  .vat-preview{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--sub);margin-top:6px;display:none;}
+  .save-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:40;}
+  @media(max-width:860px){.layout{grid-template-columns:1fr;}}
+{% endblock %}
+
+{% block content %}
+<div class="layout">
+  <div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Item Information</div></div>
+      <div class="card-body">
+        <div class="field"><label>Item Name</label><input type="text" id="f-name" value="{{ item.name }}"/></div>
+        <div class="field"><label>Category</label>
+          <select id="f-category">
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if cat.id == item.category.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field"><label>Description</label><textarea id="f-description">{{ item.description }}</textarea></div>
+        <div class="field-row">
+          <div class="field"><label>Price ($)</label><input type="number" id="f-price" value="{{ item.price }}" step="0.01" min="0" oninput="updateVat()"/></div>
+          <div class="field"><label>Discounted Price ($)</label><input type="number" id="f-discounted" value="{{ item.discounted_price|default:'' }}" step="0.01" min="0" placeholder="Leave blank if none"/></div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>VAT Percentage (%)</label>
+          <input type="number" id="f-vat" value="{{ item.vat_percentage }}" step="0.1" min="0" max="100" placeholder="0" oninput="updateVat()"/>
+          <div class="vat-preview" id="vatPreview"></div>
+          <div class="field-hint">VAT is included in the item price.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Settings</div></div>
+      <div class="card-body">
+        <div class="toggle-row">
+          <div><div class="toggle-lbl">Item available</div><div class="toggle-sub">Show to customers</div></div>
+          <label class="switch"><input type="checkbox" id="f-active" {% if item.is_active %}checked{% endif %} onchange="updateStatusTag()"/><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-lbl">Enable variants</div><div class="toggle-sub">Let customers choose options</div></div>
+          <label class="switch"><input type="checkbox" id="f-variants" {% if item.enable_variants %}checked{% endif %}/><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Image</div></div>
+      <div class="card-body">
+        <div class="img-current" id="imgWrap">
+          {% if item.image %}<img src="{{ item.image.url }}" id="imgPreview"/>{% else %}<span>🍽️</span>{% endif %}
+        </div>
+        <div class="upload-area" onclick="document.getElementById('f-image').click()">
+          <div style="font-size:20px;margin-bottom:4px;">📷</div>
+          <div style="font-size:12.5px;color:var(--muted);">Click to upload</div>
+          <input type="file" id="f-image" accept="image/*" onchange="previewImage(this)"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="padding:12px 16px;">
+        <div class="card-title">Extras</div>
+        <button class="btn-primary" style="padding:6px 12px;font-size:12px;" onclick="openAddExtra()">+ Add</button>
+      </div>
+      <div class="card-body" style="padding:0 16px;">
+        {% if extras %}
+        <table class="extras-table" id="extras-table">
+          <thead><tr><th>Name</th><th>Price</th><th></th></tr></thead>
+          <tbody id="extras-tbody">
+            {% for extra in extras %}
+            <tr id="extra-{{ extra.id }}">
+              <td>{{ extra.name }}</td>
+              <td><span class="extra-price">${{ extra.price }}</span></td>
+              <td style="text-align:right;"><button class="btn-icon danger" onclick="deleteExtra({{ extra.id }})">✕</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state" id="extras-empty" style="padding:24px 0;">
+          <div class="empty-state-icon" style="font-size:24px;">➕</div>
+          <div class="empty-state-sub">No extras yet</div>
+        </div>
+        <table class="extras-table" id="extras-table" style="display:none;">
+          <thead><tr><th>Name</th><th>Price</th><th></th></tr></thead>
+          <tbody id="extras-tbody"></tbody>
+        </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Extra Modal -->
+<div class="modal-ov" id="modal-extra">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add Extra</div><button class="modal-close" onclick="closeModal('modal-extra')">✕</button></div>
+    <div class="modal-body">
+      <div class="err-msg" id="err-extra"></div>
+      <div class="field"><label>Name</label><input type="text" id="extra-name" placeholder="e.g. Extra cheese"/></div>
+      <div class="field" style="margin:0"><label>Price ($)</label><input type="number" id="extra-price" placeholder="1.50" step="0.01" min="0"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('modal-extra')">Cancel</button><button class="btn-save" onclick="submitAddExtra()">Add</button></div>
+  </div>
+</div>
+
+<!-- Delete confirm reuse from base -->
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Save bar -->
+<div class="save-bar">
+  <button class="btn-danger" onclick="confirmDeleteItem()">Delete Item</button>
+  <button class="btn-primary" onclick="saveItem()">Save Changes</button>
+</div>
+
+<script>
+const ITEM_ID={{ item.id }};
+
+function updateStatusTag(){
+  const active=document.getElementById('f-active').checked;
+  const tag=document.getElementById('statusTag');
+  tag.className='tag '+(active?'tag-green':'tag-amber');
+  tag.textContent=active?'Active':'Paused';
+}
+
+function updateVat(){
+  const price=parseFloat(document.getElementById('f-price').value)||0;
+  const vat=parseFloat(document.getElementById('f-vat').value)||0;
+  const prev=document.getElementById('vatPreview');
+  if(vat>0&&price>0){
+    const net=price/(1+vat/100);
+    const vatAmt=price-net;
+    prev.style.display='block';
+    prev.innerHTML=`Net $${net.toFixed(2)} + VAT ${vat}% ($${vatAmt.toFixed(2)}) = <strong>$${price.toFixed(2)}</strong>`;
+  }else{prev.style.display='none';}
+}
+updateVat();
+
+function previewImage(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const w=document.getElementById('imgWrap');
+    w.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"/>`;
+  };
+  r.readAsDataURL(f);
+}
+
+async function saveItem(){
+  const fd=new FormData();
+  fd.append('csrfmiddlewaretoken',CSRF);
+  fd.append('name',document.getElementById('f-name').value.trim());
+  fd.append('category',document.getElementById('f-category').value);
+  fd.append('description',document.getElementById('f-description').value.trim());
+  fd.append('price',document.getElementById('f-price').value);
+  fd.append('discounted_price',document.getElementById('f-discounted').value);
+  fd.append('vat_percentage',document.getElementById('f-vat').value||'0');
+  fd.append('is_active',document.getElementById('f-active').checked?'1':'0');
+  fd.append('enable_variants',document.getElementById('f-variants').checked?'1':'0');
+  const img=document.getElementById('f-image').files[0];if(img)fd.append('image',img);
+  try{
+    const r=await fetch(`/owner/menu/item/${ITEM_ID}/save/`,{method:'POST',body:fd});
+    const data=await r.json();
+    if(data.ok)showToast('✓ Saved');else showToast('Error: '+(data.error||'Unknown'),true);
+  }catch(e){showToast('Network error',true);}
+}
+
+async function confirmDeleteItem(){
+  const ok=await customConfirm('Delete item?',`"{{ item.name|escapejs }}" will be permanently removed.`,'🍽');
+  if(!ok)return;
+  const fd=new FormData();fd.append('csrfmiddlewaretoken',CSRF);
+  const data=await post(`/owner/menu/item/${ITEM_ID}/delete/`,fd);
+  if(data.ok)window.location.href='/owner/menu/';
+  else showToast('Delete failed',true);
+}
+
+function openAddExtra(){
+  document.getElementById('extra-name').value='';
+  document.getElementById('extra-price').value='';
+  document.getElementById('err-extra').style.display='none';
+  openModal('modal-extra');
+}
+
+async function submitAddExtra(){
+  const name=document.getElementById('extra-name').value.trim();
+  const price=document.getElementById('extra-price').value.trim();
+  const errEl=document.getElementById('err-extra');
+  errEl.style.display='none';
+  if(!name||!price){errEl.textContent='Name and price required.';errEl.style.display='block';return;}
+  const fd=new FormData();fd.set('name',name);fd.set('price',price);
+  const data=await post(`/owner/menu/item/${ITEM_ID}/extra/add/`,fd);
+  if(!data.ok){errEl.textContent=data.error;errEl.style.display='block';return;}
+  closeModal('modal-extra');
+  document.getElementById('extras-empty')?.remove();
+  const tbl=document.getElementById('extras-table');tbl.style.display='table';
+  document.getElementById('extras-tbody').insertAdjacentHTML('beforeend',
+    `<tr id="extra-${data.id}"><td>${data.name}</td><td><span class="extra-price">$${parseFloat(data.price).toFixed(2)}</span></td><td style="text-align:right;"><button class="btn-icon danger" onclick="deleteExtra(${data.id})">✕</button></td></tr>`);
+}
+
+async function deleteExtra(id){
+  const ok=await customConfirm('Delete extra?','This extra will be removed.','➕');
+  if(!ok)return;
+  const data=await post(`/owner/menu/extra/${id}/delete/`,new FormData());
+  if(data.ok){
+    document.getElementById(`extra-${id}`)?.remove();
+    if(!document.querySelector('#extras-tbody tr')){
+      document.getElementById('extras-table').style.display='none';
+      document.getElementById('extras-table').insertAdjacentHTML('beforebegin','<div class="empty-state" id="extras-empty" style="padding:24px 0;"><div class="empty-state-icon" style="font-size:24px;">➕</div><div class="empty-state-sub">No extras yet</div></div>');
+    }
+  }
+}
+</script>
+{% endblock %}

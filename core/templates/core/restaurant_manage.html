@@ -1,0 +1,201 @@
+{% extends "core/base.html" %}
+{% block title %}Restaurant — RestoPanel{% endblock %}
+{% block page_title %}Restaurant{% endblock %}
+
+{% block topbar_right %}
+<a class="btn-ghost" href="/restaurant/{{ restaurant.slug }}/" target="_blank">👁 View page</a>
+{% endblock %}
+
+{% block extra_styles %}
+.form-wrap {
+display: grid;
+grid-template-columns: 1fr 340px;
+gap: 24px;
+align-items: start;
+padding-bottom: 80px;
+}
+@media(max-width: 900px) {
+.form-wrap { grid-template-columns: 1fr; }
+}
+.section-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+.section-card-header{padding:13px 16px;background:var(--surface);border-bottom:1px solid
+var(--border);display:flex;align-items:center;gap:8px;}
+.section-card-title{font-size:13.5px;font-weight:600;color:var(--text);}
+.section-card-sub{font-size:12px;color:var(--muted);margin-top:1px;}
+.section-card-body{padding:18px 16px;}
+.cover-preview{width:100%;height:160px;border-radius:8px;overflow:hidden;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:10px;border:1px
+solid var(--border);position:relative;}
+.cover-preview img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.url-row{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid
+var(--border);border-radius:8px;padding:9px 12px;margin-top:8px;}
+.url-text{font-size:12.5px;color:var(--sub);flex:1;word-break:break-all;}
+.url-text strong{color:var(--accent);}
+.btn-copy{background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px
+10px;font-size:11.5px;color:var(--sub);cursor:pointer;}
+.btn-copy:hover{background:var(--surface);}
+.immutable{background:var(--surface)!important;color:var(--muted)!important;cursor:not-allowed!important;}
+.save-bar {
+position: fixed;
+bottom: 0;
+left: var(--sw, 220px);
+right: 0;
+background: rgba(255,255,255,0.95);
+backdrop-filter: blur(8px);
+border-top: 1px solid var(--border);
+padding: 14px 28px;
+display: flex;
+align-items: center;
+justify-content: flex-end;
+gap: 16px;
+z-index: 100;
+}
+@media(max-width: 768px) {
+.save-bar { left: 0; }
+}
+.save-msg{font-size:13px;color:var(--muted);}
+.save-msg.dirty{color:var(--accent);}
+{% endblock %}
+
+{% block content %}
+<div class="form-wrap">
+  <div class="main-col">
+    <div class="section-card">
+      <div class="section-card-header">
+        <div>
+          <div class="section-card-title">Restaurant Information</div>
+          <div class="section-card-sub">Visible to customers on your public page</div>
+        </div>
+      </div>
+      <div class="section-card-body">
+        <div class="field"><label>Restaurant Name</label><input type="text" id="f-name" value="{{ restaurant.name }}" />
+        </div>
+        <div class="field"><label>Description</label><textarea
+            id="f-description">{{ restaurant.description }}</textarea></div>
+        <div class="field-row">
+          <div class="field"><label>Address</label><input type="text" id="f-address" value="{{ restaurant.address }}"
+              placeholder="Full address" /></div>
+          <div class="field"><label>Phone</label><input type="tel" id="f-phone" value="{{ restaurant.phone }}"
+              placeholder="+1 555 000 0000" /></div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Cover Image</label>
+          <div class="cover-preview" id="coverWrap">
+            {% if restaurant.cover_image %}<img src="{{ restaurant.cover_image.url }}" id="coverImg" />{% else
+            %}<span>🍽️</span>{% endif %}
+          </div>
+          <div class="upload-area" onclick="document.getElementById('f-cover').click()">
+            <div style="font-size:20px;margin-bottom:4px;">🖼️</div>
+            <div style="font-size:12.5px;color:var(--muted);">Click to upload cover image</div>
+            <input type="file" id="f-cover" accept="image/*" onchange="previewCover(this)" />
+          </div>
+          <div class="url-row">
+            <span style="font-size:14px;">🔗</span>
+            <span class="url-text">{{ request.get_host }}/restaurant/<strong>{{ restaurant.slug }}</strong>/</span>
+            <button class="btn-copy" onclick="copyUrl()">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-col">
+    <div class="section-card">
+      <div class="section-card-header">
+        <div>
+          <div class="section-card-title">Order Settings</div>
+          <div class="section-card-sub">Controls shown at checkout</div>
+        </div>
+      </div>
+      <div class="section-card-body">
+        <div class="field-row-3">
+          <div class="field" style="margin:0"><label>Min. Order ($)</label><input type="number" id="f-min-order"
+              value="{{ restaurant.minimum_order }}" step="0.01" min="0" /></div>
+          <div class="field" style="margin:0"><label>Prepare (min)</label><input type="number" id="f-prepare"
+              value="{{ restaurant.avg_prepare_time }}" min="1" /></div>
+          <div class="field" style="margin:0"><label>Slot (min)</label><input type="number" id="f-timeslot"
+              value="{{ restaurant.time_slot_interval }}" min="5" /></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-header">
+        <div>
+          <div class="section-card-title">Owner Information</div>
+          <div class="section-card-sub">This information is managed by system admins</div>
+        </div>
+      </div>
+      <div class="section-card-body">
+        <div class="field" style="margin-bottom:12px;">
+          <label>Owner Name <span style="font-size:11px;color:var(--muted);font-weight:400;">(read only)</span></label>
+          <input class="immutable" type="text" id="f-owner-name" value="{{ restaurant.owner_name }}" readonly />
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label>Owner Email <span style="font-size:11px;color:var(--muted);font-weight:400;">(read only)</span></label>
+          <input class="immutable" type="email" id="f-owner-email" value="{{ restaurant.owner_email }}" readonly />
+        </div>
+        <div class="field" style="margin:0">
+          <label>Owner Phone <span style="font-size:11px;color:var(--muted);font-weight:400;">(read only)</span></label>
+          <input class="immutable" type="tel" value="{{ restaurant.owner_phone }}" readonly />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="save-bar">
+  <!-- <div class="save-msg" id="saveMsg">All changes saved</div> -->
+  <button class="btn-primary" id="saveBtn" onclick="saveRestaurant()">Save Changes</button>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+
+<script>
+  const HOST = '{{ request.get_host }}';
+
+  function previewCover(input) {
+    const f = input.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = e => {
+      const w = document.getElementById('coverWrap');
+      w.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"/>`;
+    };
+    r.readAsDataURL(f);
+  }
+
+  function copyUrl() {
+    const slug = '{{ restaurant.slug }}';
+    navigator.clipboard.writeText(`${location.protocol}//${HOST}/restaurant/${slug}/`).then(() => showToast('URL copied!'));
+  }
+
+  async function saveRestaurant() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    ['name', 'description', 'address', 'phone', 'owner_name', 'owner_email', 'min_order', 'prepare', 'timeslot'].forEach(() => { });
+    fd.append('name', document.getElementById('f-name').value.trim());
+    fd.append('description', document.getElementById('f-description').value.trim());
+    fd.append('address', document.getElementById('f-address').value.trim());
+    fd.append('phone', document.getElementById('f-phone').value.trim());
+    fd.append('owner_name', document.getElementById('f-owner-name').value.trim());
+    fd.append('owner_email', document.getElementById('f-owner-email').value.trim());
+    fd.append('minimum_order', document.getElementById('f-min-order').value);
+    fd.append('avg_prepare_time', document.getElementById('f-prepare').value);
+    fd.append('time_slot_interval', document.getElementById('f-timeslot').value);
+    const img = document.getElementById('f-cover').files[0]; if (img) fd.append('cover_image', img);
+    try {
+      const r = await fetch('/owner/restaurant/', { method: 'POST', body: fd });
+      const data = await r.json();
+      if (data.ok) { showToast('✓ Saved'); document.getElementById('saveMsg').textContent = 'All changes saved'; document.getElementById('saveMsg').className = 'save-msg'; }
+      else { showToast('Error: ' + (data.error || 'Unknown'), true); }
+    } catch (e) { showToast('Network error', true); }
+    btn.disabled = false; btn.textContent = 'Save Changes';
+  }
+
+  document.querySelectorAll('input:not(.immutable),textarea').forEach(el => el.addEventListener('input', () => {
+    const m = document.getElementById('saveMsg'); m.textContent = 'Unsaved changes'; m.className = 'save-msg dirty';
+  }));
+</script>
+{% endblock %}

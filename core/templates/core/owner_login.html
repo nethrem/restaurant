@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Owner Login — RestoPanel</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    body{
+      font-family:'DM Sans',sans-serif;
+      background:#fafafa;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .card{
+      width:100%;
+      max-width:380px;
+      background:#fff;
+      border:1px solid #ebebeb;
+      border-radius:16px;
+      padding:40px 36px;
+      box-shadow:0 4px 24px rgba(0,0,0,0.06);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:32px;
+    }
+
+    .brand-mark{
+      width:36px;height:36px;
+      background:#f97316;
+      border-radius:9px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;
+      flex-shrink:0;
+    }
+
+    .brand-name{
+      font-size:16px;
+      font-weight:600;
+      color:#111;
+      letter-spacing:-0.2px;
+    }
+
+    .brand-name span{color:#f97316;}
+
+    h1{
+      font-size:22px;
+      font-weight:600;
+      color:#111;
+      letter-spacing:-0.4px;
+      margin-bottom:6px;
+    }
+
+    .sub{
+      font-size:14px;
+      color:#888;
+      margin-bottom:28px;
+    }
+
+    .err{
+      background:#fff5f5;
+      border:1px solid #fecaca;
+      border-radius:8px;
+      padding:10px 14px;
+      color:#dc2626;
+      font-size:13px;
+      margin-bottom:20px;
+    }
+
+    .field{margin-bottom:16px;}
+
+    label{
+      display:block;
+      font-size:12px;
+      font-weight:500;
+      color:#555;
+      margin-bottom:6px;
+    }
+
+    input{
+      width:100%;
+      background:#f7f7f7;
+      border:1px solid #e8e8e8;
+      border-radius:9px;
+      color:#111;
+      font-family:'DM Sans',sans-serif;
+      font-size:14px;
+      padding:11px 14px;
+      outline:none;
+      transition:border-color .15s,background .15s;
+    }
+
+    input:focus{
+      background:#fff;
+      border-color:#f97316;
+      box-shadow:0 0 0 3px rgba(249,115,22,0.08);
+    }
+
+    input::placeholder{color:#bbb;}
+
+    .btn{
+      width:100%;
+      margin-top:8px;
+      padding:12px;
+      background:#f97316;
+      color:#fff;
+      font-family:'DM Sans',sans-serif;
+      font-size:14px;
+      font-weight:600;
+      border:none;
+      border-radius:9px;
+      cursor:pointer;
+      transition:background .15s,transform .1s;
+      letter-spacing:-0.1px;
+    }
+
+    .btn:hover{background:#ea6c0a;}
+    .btn:active{transform:scale(.99);}
+
+    .footer{
+      text-align:center;
+      margin-top:24px;
+      font-size:12px;
+      color:#bbb;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">🍽</div>
+      <div class="brand-name">Resto<span>Panel</span></div>
+    </div>
+
+    <h1>Sign in</h1>
+    <p class="sub">Enter your credentials to continue</p>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="err">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="your_username" autocomplete="username" required/>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required/>
+      </div>
+      <button class="btn" type="submit">Sign In →</button>
+    </form>
+
+    <p class="footer">Contact your admin to get access</p>
+  </div>
+</body>
+</html>

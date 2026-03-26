@@ -1,0 +1,8 @@
+Django==4.2.11
+django_ratelimit==4.1.0
+python-dotenv==1.2.2
+gunicorn
+pillow
+psycopg2-binary
+whitenoise
+dj-database-url

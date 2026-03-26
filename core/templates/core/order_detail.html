@@ -1,0 +1,170 @@
+{% extends "core/base.html" %}
+{% block title %}Order #{{ order.order_number }} — RestoPanel{% endblock %}
+{% block page_title %}Order #{{ order.order_number }}{% endblock %}
+
+{% block topbar_right %}
+<a class="btn-ghost" href="/owner/orders/">← Back</a>
+{% if order.status == 'new' %}
+  <span class="tag tag-green">New</span>
+{% elif order.status == 'accepted' %}
+  <span class="tag tag-amber">Accepted</span>
+{% elif order.status == 'delivered' %}
+  <span class="tag" style="background:#eff6ff;color:#2563eb;">Delivered</span>
+{% else %}
+  <span class="tag tag-red">Rejected</span>
+{% endif %}
+{% endblock %}
+
+{% block extra_styles %}
+  .layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;}
+  .info-row{display:flex;gap:8px;margin-bottom:9px;font-size:13.5px;}
+  .info-row:last-child{margin-bottom:0;}
+  .info-ico{flex-shrink:0;margin-top:1px;}
+  .info-lbl{font-size:11px;color:var(--muted);margin-bottom:1px;}
+  .info-val{font-weight:500;}
+  .items-tbl{width:100%;border-collapse:collapse;}
+  .items-tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;padding:0 0 9px;text-align:left;border-bottom:1px solid var(--border);}
+  .items-tbl td{padding:11px 0;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:top;}
+  .items-tbl tr:last-child td{border-bottom:none;}
+  .item-n{font-weight:600;}
+  .item-extras{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .item-vat{font-size:11px;color:var(--muted);margin-top:2px;}
+  .totals{border-top:1px solid var(--border);padding-top:12px;margin-top:4px;}
+  .total-row{display:flex;justify-content:space-between;font-size:13.5px;color:var(--sub);margin-bottom:6px;}
+  .total-row.grand{font-size:15px;font-weight:700;color:var(--text);padding-top:10px;border-top:1px solid var(--border);margin-top:4px;margin-bottom:0;}
+  .comment-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13.5px;color:var(--sub);font-style:italic;margin-top:12px;}
+  .action-btn{width:100%;padding:11px;font-family:var(--font);font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:8px;}
+  .action-btn:last-child{margin-bottom:0;}
+  .action-accept{background:var(--green);color:#fff;}
+  .action-accept:hover{background:#15803d;}
+  .action-reject{background:var(--red-bg);color:var(--red);border:1px solid #fecaca;}
+  .action-reject:hover{background:#fee2e2;}
+  .action-deliver{background:#2563eb;color:#fff;}
+  .action-deliver:hover{background:#1d4ed8;}
+  .action-done{background:var(--surface);color:var(--muted);border:1px solid var(--border);cursor:default;}
+  .tl-item{display:flex;gap:12px;margin-bottom:16px;position:relative;}
+  .tl-item:last-child{margin-bottom:0;}
+  .tl-item::before{content:'';position:absolute;left:14px;top:28px;bottom:-16px;width:1px;background:var(--border);}
+  .tl-item:last-child::before{display:none;}
+  .tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:1px solid var(--border);background:#fff;flex-shrink:0;}
+  .tl-dot.new{border-color:#86efac;background:#f0fdf4;}
+  .tl-dot.accepted{border-color:#fcd34d;background:#fffbeb;}
+  .tl-dot.delivered{border-color:#93c5fd;background:#eff6ff;}
+  .tl-dot.rejected{border-color:#fca5a5;background:var(--red-bg);}
+  .tl-status{font-size:13.5px;font-weight:600;color:var(--text);text-transform:capitalize;}
+  .tl-time{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .tl-by{font-size:12px;color:var(--sub);margin-top:2px;}
+  .action-banner{display:none;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:500;align-items:center;gap:8px;margin-bottom:12px;}
+  .action-banner.show{display:flex;}
+  .banner-ok{background:var(--green-bg);color:var(--green);border:1px solid #bbf7d0;}
+  .banner-err{background:var(--red-bg);color:var(--red);border:1px solid #fecaca;}
+  @media(max-width:900px){.layout{grid-template-columns:1fr;}}
+{% endblock %}
+
+{% block content %}
+<div class="layout">
+  <div>
+    <!-- Restaurant Info -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Restaurant</div></div>
+      <div class="card-body">
+        <div class="info-row"><span class="info-ico">🍽️</span><div><div class="info-lbl">Name</div><div class="info-val">{{ restaurant.name }}</div></div></div>
+        <div class="info-row"><span class="info-ico">📞</span><div><div class="info-lbl">Phone</div><div class="info-val">{{ restaurant.owner_phone }}</div></div></div>
+        <div class="info-row" style="margin:0"><span class="info-ico">👤</span><div><div class="info-lbl">Owner</div><div class="info-val">{{ restaurant.owner_name }}</div></div></div>
+      </div>
+    </div>
+
+    <!-- Customer -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Customer</div></div>
+      <div class="card-body">
+        <div class="info-row"><span class="info-ico">👤</span><div><div class="info-lbl">Name</div><div class="info-val">{{ order.customer_name }}</div></div></div>
+        <div class="info-row"><span class="info-ico">📞</span><div><div class="info-lbl">Phone</div><div class="info-val">{{ order.customer_phone }}</div></div></div>
+        {% if order.customer_email %}<div class="info-row"><span class="info-ico">✉️</span><div><div class="info-lbl">Email</div><div class="info-val">{{ order.customer_email }}</div></div></div>{% endif %}
+        {% if order.delivery_area %}<div class="info-row"><span class="info-ico">🛵</span><div><div class="info-lbl">Zone</div><div class="info-val">{{ order.delivery_area.name }}</div></div></div>{% endif %}
+        {% if order.delivery_address %}<div class="info-row" style="margin:0"><span class="info-ico">📍</span><div><div class="info-lbl">Address</div><div class="info-val">{{ order.delivery_address }}</div></div></div>{% endif %}
+      </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Order</div></div>
+      <div class="card-body">
+        <table class="items-tbl">
+          <thead><tr><th>Item</th><th>Qty</th><th style="text-align:right">Total</th></tr></thead>
+          <tbody>
+            {% for item in order.items.all %}
+            <tr>
+              <td>
+                <div class="item-n">{{ item.name }}</div>
+                {% if item.extras %}<div class="item-extras">+ {{ item.extras }}</div>{% endif %}
+                {% if item.vat_percentage %}<div class="item-vat">VAT {{ item.vat_percentage }}%</div>{% endif %}
+              </td>
+              <td style="color:var(--muted);">× {{ item.quantity }}</td>
+              <td style="text-align:right;font-weight:600;">${{ item.line_total }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="totals">
+          {% if order.comment %}<div class="comment-box">{{ order.comment }}</div>{% endif %}
+          <div class="total-row"><span>Subtotal</span><span>${{ order.subtotal }}</span></div>
+          {% if order.vat_amount %}<div class="total-row"><span>VAT</span><span>${{ order.vat_amount|floatformat:2 }}</span></div>{% endif %}
+          {% if order.delivery_cost %}<div class="total-row"><span>Delivery</span><span>${{ order.delivery_cost }}</span></div>{% endif %}
+          <div class="total-row grand"><span>Total</span><span>${{ order.total }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <!-- Actions -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Actions</div></div>
+      <div class="card-body">
+        <div class="action-banner" id="actionBanner"></div>
+        {% if order.status == 'new' %}
+          <button class="action-btn action-accept" onclick="doAction('accept')">✓ Accept Order</button>
+          <button class="action-btn action-reject" onclick="doAction('reject')">✕ Reject Order</button>
+        {% elif order.status == 'accepted' %}
+          <button class="action-btn action-deliver" onclick="doAction('deliver')">🚀 Mark Delivered</button>
+        {% else %}
+          <div class="action-btn action-done">{% if order.status == 'delivered' %}✅ Delivered{% else %}❌ Rejected{% endif %}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Status History</div></div>
+      <div class="card-body">
+        {% for h in history %}
+        <div class="tl-item">
+          <div class="tl-dot {{ h.status }}">{% if h.status == 'new' %}🔔{% elif h.status == 'accepted' %}✓{% elif h.status == 'delivered' %}🚀{% else %}✕{% endif %}</div>
+          <div>
+            <div class="tl-status">{{ h.status }}</div>
+            <div class="tl-time">{{ h.created_at|date:"M j, Y g:i A" }}</div>
+            <div class="tl-by">{{ h.changed_by }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const ORDER_ID={{ order.id }};
+async function doAction(action){
+  const fd=new FormData();fd.append('action',action);
+  const data=await post(`/owner/orders/${ORDER_ID}/action/`,fd);
+  const banner=document.getElementById('actionBanner');
+  if(!data.ok){banner.className='action-banner show banner-err';banner.innerHTML='⚠ '+(data.error||'Error');return;}
+  banner.className='action-banner show banner-ok';
+  banner.innerHTML={accept:'✓ Accepted! Redirecting…',reject:'✕ Rejected. Redirecting…',deliver:'🚀 Delivered! Redirecting…'}[action]||'Done!';
+  setTimeout(()=>window.location.href='/owner/orders/',1200);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,568 @@
+{% extends "core/base.html" %}
+{% block title %}Dashboard — RestoPanel{% endblock %}
+{% block page_title %}
+  {% if active_page == 'menu' %}Menu{% elif active_page == 'delivery' %}Delivery Areas{% else %}Dashboard{% endif %}
+{% endblock %}
+
+{% block extra_styles %}
+  .page{display:none;}
+  .page.active{display:block;}
+
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+  .stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+  .stat-card:hover{box-shadow:0 2px 12px rgba(0,0,0,0.06);}
+  .stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+  .stat-icon{font-size:16px;opacity:.5;}
+  .stat-value{font-size:28px;font-weight:700;color:var(--text);letter-spacing:-0.5px;margin-bottom:3px;}
+  .stat-hint{font-size:12px;color:var(--muted);}
+  .stat-bar{height:3px;border-radius:2px;margin-top:12px;background:var(--border);}
+  .stat-bar-fill{height:100%;border-radius:2px;background:var(--accent);width:0%;}
+  @media(max-width:1100px){.stats-grid{grid-template-columns:1fr 1fr;}}
+  @media(max-width:540px){.stats-grid{grid-template-columns:1fr;}}
+
+  /* Menu page styles */
+  .cat-block{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
+  .cat-header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--surface);cursor:pointer;user-select:none;transition:background .12s;}
+  .cat-header:hover{background:#f0f0f0;}
+  .cat-header-l{display:flex;align-items:center;gap:10px;}
+  .cat-name{font-size:14px;font-weight:600;color:var(--text);}
+  .cat-count{font-size:11.5px;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:20px;}
+  .cat-paused-tag{font-size:11px;color:#d97706;background:var(--amber-bg);padding:2px 7px;border-radius:20px;}
+  .cat-actions{display:flex;align-items:center;gap:5px;}
+  .cat-chevron{font-size:11px;color:var(--muted);margin-left:4px;transition:transform .2s;}
+  .cat-chevron.open{transform:rotate(180deg);}
+  .cat-body{display:none;padding:14px;}
+  .cat-body.open{display:block;}
+  .items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+  .item-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .15s;background:#fff;}
+  .item-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);transform:translateY(-1px);}
+  .item-card.paused{opacity:.55;}
+  .item-img{height:120px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;}
+  .item-img img{width:100%;height:100%;object-fit:cover;}
+  .item-body{padding:10px 12px;}
+  .item-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
+  .item-desc{font-size:11.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:28px;margin-bottom:8px;}
+  .item-footer{display:flex;align-items:center;justify-content:space-between;}
+  .item-price{font-size:14px;font-weight:700;color:var(--text);}
+  .item-actions{display:flex;gap:4px;}
+  .item-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid var(--border);background:#fff;cursor:pointer;color:var(--sub);transition:all .12s;}
+  .item-btn:hover{background:var(--surface);}
+  .item-btn.del{color:var(--red);border-color:#fecaca;background:var(--red-bg);}
+  .item-btn.del:hover{background:#fee2e2;}
+  .add-item-card{border:1.5px dashed var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:170px;cursor:pointer;transition:all .15s;color:var(--muted);background:#fff;}
+  .add-item-card:hover{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+  .add-item-card .plus{font-size:22px;}
+  .add-item-card span{font-size:12.5px;font-weight:500;}
+
+  /* Delivery area cards */
+  .areas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+  .area-card{border:1px solid var(--border);border-radius:var(--radius);padding:16px;background:#fff;transition:box-shadow .15s;}
+  .area-card:hover{box-shadow:0 2px 12px rgba(0,0,0,0.06);}
+  .area-card.paused{opacity:.6;}
+  .area-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+  .area-card-name{font-size:15px;font-weight:600;color:var(--text);}
+  .area-card-actions{display:flex;gap:5px;}
+  .area-meta{display:flex;flex-direction:column;gap:6px;}
+  .area-meta-row{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--sub);}
+  .area-meta-row strong{color:var(--text);}
+  @media(max-width:640px){.areas-grid{grid-template-columns:1fr;}}
+
+  /* Image upload */
+  .img-upload-area{border:1.5px dashed var(--border);border-radius:8px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;background:#fff;}
+  .img-upload-area:hover{border-color:var(--accent);background:var(--accent-light);}
+  .img-upload-area input{display:none;}
+  .img-upload-lbl{font-size:13px;color:var(--muted);margin-top:5px;}
+  .img-preview{max-height:70px;border-radius:7px;margin-top:8px;display:none;}
+{% endblock %}
+
+{% block content %}
+  <!-- DASHBOARD PAGE -->
+  <div class="page {% if not active_page or active_page == 'dashboard' %}active{% endif %}" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-top"><div class="stat-label">Today's Orders</div><div class="stat-icon">📦</div></div>
+        <div class="stat-value">0</div>
+        <div class="stat-hint">No orders yet</div>
+        <div class="stat-bar"><div class="stat-bar-fill"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"><div class="stat-label">Revenue</div><div class="stat-icon">💰</div></div>
+        <div class="stat-value">$0</div>
+        <div class="stat-hint">Updated live</div>
+        <div class="stat-bar"><div class="stat-bar-fill"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"><div class="stat-label">Pending</div><div class="stat-icon">⏳</div></div>
+        <div class="stat-value">0</div>
+        <div class="stat-hint">Awaiting action</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="background:var(--red)"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top"><div class="stat-label">Menu Items</div><div class="stat-icon">🍽</div></div>
+        <div class="stat-value">0</div>
+        <div class="stat-hint">Active items</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="background:var(--green)"></div></div>
+      </div>
+    </div>
+    <div class="sec-header"><div class="sec-title">Recent Orders</div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th></tr></thead>
+        <tbody>
+          <tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">🧾</div><div class="empty-state-title">No orders yet</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MENU PAGE -->
+  <div class="page {% if active_page == 'menu' %}active{% endif %}" id="page-menu">
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Menu</div>
+        <div class="sec-sub">Manage categories and items</div>
+      </div>
+      <button class="btn-primary" onclick="openModal('modal-add-cat')">+ Add Category</button>
+    </div>
+
+    <div id="categories-container">
+      {% for cat in categories %}
+      <div class="cat-block" id="cat-{{ cat.id }}">
+        <div class="cat-header" onclick="toggleCat(this)">
+          <div class="cat-header-l">
+            <div class="cat-name">{{ cat.name }}</div>
+            <div class="cat-count">{{ cat.items.count }} item{{ cat.items.count|pluralize }}</div>
+            {% if not cat.is_active %}<div class="cat-paused-tag">Paused</div>{% endif %}
+          </div>
+          <div class="cat-actions" onclick="event.stopPropagation()">
+            <button class="btn-icon" title="Add Item" onclick="openAddItem({{ cat.id }},'{{ cat.name|escapejs }}')">+</button>
+            <button class="btn-icon" title="Edit" onclick="openEditCat({{ cat.id }},'{{ cat.name|escapejs }}')">✎</button>
+            <button class="btn-icon" title="{% if cat.is_active %}Pause{% else %}Activate{% endif %}" onclick="toggleCatStatus({{ cat.id }},this)">{% if cat.is_active %}⏸{% else %}▶{% endif %}</button>
+            <button class="btn-icon danger" title="Delete" onclick="deleteCat({{ cat.id }})">✕</button>
+            <span class="cat-chevron open">▾</span>
+          </div>
+        </div>
+        <div class="cat-body open">
+          <div class="items-grid" id="items-{{ cat.id }}">
+            {% for item in cat.items.all %}
+            <div class="item-card {% if not item.is_active %}paused{% endif %}" id="item-{{ item.id }}" onclick="window.location='/owner/menu/item/{{ item.id }}/'">
+              <div class="item-img">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}">{% else %}🍽{% endif %}</div>
+              <div class="item-body">
+                <div class="item-name" title="{{ item.name }}">{{ item.name }}</div>
+                <div class="item-desc">{{ item.description|default:"" }}</div>
+                <div class="item-footer">
+                  <div class="item-price">${{ item.price }}</div>
+                  <div class="item-actions" onclick="event.stopPropagation()">
+                    <button class="item-btn" title="{% if item.is_active %}Pause{% else %}Activate{% endif %}" onclick="toggleItemStatus({{ item.id }},this)">{% if item.is_active %}⏸{% else %}▶{% endif %}</button>
+                    <button class="item-btn del" title="Delete" onclick="deleteItem({{ item.id }})">✕</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+            <div class="add-item-card" onclick="openAddItem({{ cat.id }},'{{ cat.name|escapejs }}')">
+              <div class="plus">+</div><span>Add Item</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state" id="empty-menu">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">No categories yet</div>
+        <div class="empty-state-sub">Click "Add Category" to get started</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- DELIVERY PAGE -->
+  <div class="page {% if active_page == 'delivery' %}active{% endif %}" id="page-delivery">
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Delivery Areas</div>
+        <div class="sec-sub">Zones and delivery fees</div>
+      </div>
+      <button class="btn-primary" onclick="openModal('modal-add-area')">+ Add Area</button>
+    </div>
+    <div class="areas-grid" id="areas-grid">
+      {% for area in areas %}
+      <div class="area-card {% if not area.is_active %}paused{% endif %}" id="area-{{ area.id }}">
+        <div class="area-card-top">
+          <div>
+            <div class="area-card-name">{{ area.name }}</div>
+            <div style="margin-top:5px;">
+              <span class="tag {% if area.is_active %}tag-green{% else %}tag-amber{% endif %}">{% if area.is_active %}Active{% else %}Paused{% endif %}</span>
+            </div>
+          </div>
+          <div class="area-card-actions">
+            <button class="btn-icon" title="Edit" onclick="openEditArea({{ area.id }},'{{ area.name|escapejs }}','{{ area.delivery_cost }}','{{ area.phone|escapejs }}')">✎</button>
+            <button class="btn-icon" title="Toggle" onclick="toggleArea({{ area.id }},this)">{% if area.is_active %}⏸{% else %}▶{% endif %}</button>
+            <button class="btn-icon danger" title="Delete" onclick="deleteArea({{ area.id }})">✕</button>
+          </div>
+        </div>
+        <div class="area-meta">
+          <div class="area-meta-row">💰 Cost: <strong>${{ area.delivery_cost }}</strong></div>
+          <div class="area-meta-row">📞 <strong>{{ area.phone }}</strong></div>
+        </div>
+      </div>
+      {% empty %}
+      <div style="grid-column:1/-1">
+        <div class="empty-state" id="empty-areas">
+          <div class="empty-state-icon">🛵</div>
+          <div class="empty-state-title">No delivery areas</div>
+          <div class="empty-state-sub">Add your first delivery zone above</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- ═══ MODALS ═══ -->
+<!-- Add Delivery Area -->
+<div class="modal-ov" id="modal-add-area">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add Delivery Area</div><button class="modal-close" onclick="closeModal('modal-add-area')">✕</button></div>
+    <div class="modal-body">
+      <div class="err-msg" id="err-add-area"></div>
+      <div class="field"><label>Area Name</label><input type="text" id="add-area-name" placeholder="e.g. Downtown"/></div>
+      <div class="field"><label>Delivery Cost ($)</label><input type="number" id="add-area-cost" placeholder="2.50" step="0.01" min="0"/></div>
+      <div class="field" style="margin:0"><label>Phone</label><input type="tel" id="add-area-phone" placeholder="+1 555 000 0000"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('modal-add-area')">Cancel</button><button class="btn-save" onclick="submitAddArea()">Add Area</button></div>
+  </div>
+</div>
+
+<!-- Edit Delivery Area -->
+<div class="modal-ov" id="modal-edit-area">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Edit Delivery Area</div><button class="modal-close" onclick="closeModal('modal-edit-area')">✕</button></div>
+    <div class="modal-body">
+      <div class="err-msg" id="err-edit-area"></div>
+      <input type="hidden" id="edit-area-id"/>
+      <div class="field"><label>Area Name</label><input type="text" id="edit-area-name"/></div>
+      <div class="field"><label>Delivery Cost ($)</label><input type="number" id="edit-area-cost" step="0.01" min="0"/></div>
+      <div class="field" style="margin:0"><label>Phone</label><input type="tel" id="edit-area-phone"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('modal-edit-area')">Cancel</button><button class="btn-save" onclick="submitEditArea()">Save</button></div>
+  </div>
+</div>
+
+<!-- Add Category -->
+<div class="modal-ov" id="modal-add-cat">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Add Category</div><button class="modal-close" onclick="closeModal('modal-add-cat')">✕</button></div>
+    <div class="modal-body">
+      <div class="err-msg" id="err-add-cat"></div>
+      <div class="field" style="margin:0"><label>Category Name</label><input type="text" id="add-cat-name" placeholder="e.g. Starters, Mains, Desserts"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('modal-add-cat')">Cancel</button><button class="btn-save" onclick="submitAddCat()">Add</button></div>
+  </div>
+</div>
+
+<!-- Edit Category -->
+<div class="modal-ov" id="modal-edit-cat">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Edit Category</div><button class="modal-close" onclick="closeModal('modal-edit-cat')">✕</button></div>
+    <div class="modal-body">
+      <div class="err-msg" id="err-edit-cat"></div>
+      <input type="hidden" id="edit-cat-id"/>
+      <div class="field" style="margin:0"><label>Category Name</label><input type="text" id="edit-cat-name"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('modal-edit-cat')">Cancel</button><button class="btn-save" onclick="submitEditCat()">Save</button></div>
+  </div>
+</div>
+
+<!-- Add Item -->
+<div class="modal-ov" id="modal-add-item">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Add Item — <span id="add-item-cat-name" style="color:var(--accent);"></span></div>
+      <button class="modal-close" onclick="closeModal('modal-add-item')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="err-msg" id="err-add-item"></div>
+      <input type="hidden" id="add-item-cat-id"/>
+      <div class="field"><label>Item Name</label><input type="text" id="add-item-name" placeholder="e.g. Grilled Salmon"/></div>
+      <div class="field"><label>Description</label><textarea id="add-item-desc" placeholder="Ingredients, notes..."></textarea></div>
+      <div class="field"><label>Price ($)</label><input type="number" id="add-item-price" placeholder="12.99" step="0.01" min="0"/></div>
+      <div class="field" style="margin:0">
+        <label>Image (optional)</label>
+        <div class="img-upload-area" onclick="document.getElementById('add-item-img').click()">
+          <div>📷</div><div class="img-upload-lbl">Click to upload</div>
+          <input type="file" id="add-item-img" accept="image/*" onchange="previewImg(this,'add-item-preview')"/>
+          <img id="add-item-preview" class="img-preview"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal('modal-add-item')">Cancel</button><button class="btn-save" onclick="submitAddItem()">Add Item</button></div>
+  </div>
+</div>
+
+<script>
+// ── Navigation ──
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg = document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
+}
+
+// Set initial page title from active_page
+document.addEventListener('DOMContentLoaded',()=>{
+  const active = document.querySelector('.page.active');
+  if(active){
+    const ttls = {dashboard:'Dashboard',menu:'Menu',delivery:'Delivery Areas'};
+    const id = active.id.replace('page-','');
+    const el = document.querySelector('.page-title');
+    if(el && ttls[id]) el.textContent = ttls[id];
+  }
+});
+
+// ── Helpers ──
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
+function hideErr(id){document.getElementById(id).style.display='none';}
+
+function previewImg(input,previewId){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{const img=document.getElementById(previewId);img.src=e.target.result;img.style.display='block';};
+  r.readAsDataURL(f);
+}
+
+// ══ DELIVERY AREAS ══
+async function submitAddArea(){
+  hideErr('err-add-area');
+  const name=document.getElementById('add-area-name').value.trim();
+  const cost=document.getElementById('add-area-cost').value.trim();
+  const phone=document.getElementById('add-area-phone').value.trim();
+  if(!name||!cost||!phone){showErr('err-add-area','All fields are required.');return;}
+  const fd=new FormData();fd.set('name',name);fd.set('delivery_cost',cost);fd.set('phone',phone);
+  const data=await post('/owner/delivery/add/',fd);
+  if(!data.ok){showErr('err-add-area',data.error);return;}
+  closeModal('modal-add-area');
+  ['add-area-name','add-area-cost','add-area-phone'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('empty-areas')?.remove();
+  document.getElementById('areas-grid').insertAdjacentHTML('beforeend',areaCardHTML(data));
+}
+
+function areaCardHTML(a){
+  return `<div class="area-card" id="area-${a.id}">
+    <div class="area-card-top">
+      <div><div class="area-card-name">${a.name}</div><div style="margin-top:5px;"><span class="tag tag-green">Active</span></div></div>
+      <div class="area-card-actions">
+        <button class="btn-icon" title="Edit" onclick="openEditArea(${a.id},'${esc(a.name)}','${a.delivery_cost}','${esc(a.phone)}')">✎</button>
+        <button class="btn-icon" title="Toggle" onclick="toggleArea(${a.id},this)">⏸</button>
+        <button class="btn-icon danger" title="Delete" onclick="deleteArea(${a.id})">✕</button>
+      </div>
+    </div>
+    <div class="area-meta">
+      <div class="area-meta-row">💰 Cost: <strong>$${parseFloat(a.delivery_cost).toFixed(2)}</strong></div>
+      <div class="area-meta-row">📞 <strong>${a.phone}</strong></div>
+    </div>
+  </div>`;
+}
+
+function openEditArea(id,name,cost,phone){
+  document.getElementById('edit-area-id').value=id;
+  document.getElementById('edit-area-name').value=name;
+  document.getElementById('edit-area-cost').value=cost;
+  document.getElementById('edit-area-phone').value=phone;
+  hideErr('err-edit-area');openModal('modal-edit-area');
+}
+
+async function submitEditArea(){
+  hideErr('err-edit-area');
+  const id=document.getElementById('edit-area-id').value;
+  const name=document.getElementById('edit-area-name').value.trim();
+  const cost=document.getElementById('edit-area-cost').value.trim();
+  const phone=document.getElementById('edit-area-phone').value.trim();
+  if(!name||!cost||!phone){showErr('err-edit-area','All fields required.');return;}
+  const fd=new FormData();fd.set('name',name);fd.set('delivery_cost',cost);fd.set('phone',phone);
+  const data=await post(`/owner/delivery/${id}/edit/`,fd);
+  if(!data.ok){showErr('err-edit-area',data.error);return;}
+  closeModal('modal-edit-area');
+  const card=document.getElementById(`area-${id}`);
+  card.querySelector('.area-card-name').textContent=data.name;
+  const rows=card.querySelectorAll('.area-meta-row');
+  rows[0].innerHTML=`💰 Cost: <strong>$${parseFloat(data.delivery_cost).toFixed(2)}</strong>`;
+  rows[1].innerHTML=`📞 <strong>${data.phone}</strong>`;
+  card.querySelector('.btn-icon').setAttribute('onclick',`openEditArea(${data.id},'${esc(data.name)}','${data.delivery_cost}','${esc(data.phone)}')`);
+}
+
+async function toggleArea(id,btn){
+  const data=await post(`/owner/delivery/${id}/toggle/`,new FormData());
+  if(!data.ok)return;
+  const card=document.getElementById(`area-${id}`);
+  const tag=card.querySelector('.tag');
+  if(data.is_active){card.classList.remove('paused');tag.className='tag tag-green';tag.textContent='Active';btn.textContent='⏸';}
+  else{card.classList.add('paused');tag.className='tag tag-amber';tag.textContent='Paused';btn.textContent='▶';}
+}
+
+async function deleteArea(id){
+  const ok=await customConfirm('Delete delivery area?','This zone will be permanently removed.','🛵');
+  if(!ok)return;
+  const data=await post(`/owner/delivery/${id}/delete/`,new FormData());
+  if(data.ok)document.getElementById(`area-${id}`)?.remove();
+}
+
+// ══ MENU CATEGORIES ══
+async function submitAddCat(){
+  hideErr('err-add-cat');
+  const name=document.getElementById('add-cat-name').value.trim();
+  if(!name){showErr('err-add-cat','Category name is required.');return;}
+  const fd=new FormData();fd.set('name',name);
+  const data=await post('/owner/menu/category/add/',fd);
+  if(!data.ok){showErr('err-add-cat',data.error);return;}
+  closeModal('modal-add-cat');
+  document.getElementById('add-cat-name').value='';
+  document.getElementById('empty-menu')?.remove();
+  document.getElementById('categories-container').insertAdjacentHTML('beforeend',catBlockHTML(data));
+}
+
+function catBlockHTML(cat){
+  return `<div class="cat-block" id="cat-${cat.id}">
+    <div class="cat-header" onclick="toggleCat(this)">
+      <div class="cat-header-l">
+        <div class="cat-name">${cat.name}</div>
+        <div class="cat-count">0 items</div>
+      </div>
+      <div class="cat-actions" onclick="event.stopPropagation()">
+        <button class="btn-icon" title="Add Item" onclick="openAddItem(${cat.id},'${esc(cat.name)}')">+</button>
+        <button class="btn-icon" title="Edit" onclick="openEditCat(${cat.id},'${esc(cat.name)}')">✎</button>
+        <button class="btn-icon" title="Pause" onclick="toggleCatStatus(${cat.id},this)">⏸</button>
+        <button class="btn-icon danger" title="Delete" onclick="deleteCat(${cat.id})">✕</button>
+        <span class="cat-chevron open">▾</span>
+      </div>
+    </div>
+    <div class="cat-body open">
+      <div class="items-grid" id="items-${cat.id}">
+        <div class="add-item-card" onclick="openAddItem(${cat.id},'${esc(cat.name)}')">
+          <div class="plus">+</div><span>Add Item</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleCat(header){
+  const body=header.nextElementSibling;
+  const chevron=header.querySelector('.cat-chevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+function openEditCat(id,name){
+  document.getElementById('edit-cat-id').value=id;
+  document.getElementById('edit-cat-name').value=name;
+  hideErr('err-edit-cat');openModal('modal-edit-cat');
+}
+
+async function submitEditCat(){
+  hideErr('err-edit-cat');
+  const id=document.getElementById('edit-cat-id').value;
+  const name=document.getElementById('edit-cat-name').value.trim();
+  if(!name){showErr('err-edit-cat','Name required.');return;}
+  const fd=new FormData();fd.set('name',name);
+  const data=await post(`/owner/menu/category/${id}/edit/`,fd);
+  if(!data.ok){showErr('err-edit-cat',data.error);return;}
+  closeModal('modal-edit-cat');
+  document.querySelector(`#cat-${id} .cat-name`).textContent=data.name;
+  document.querySelector(`#cat-${id} .cat-actions .btn-icon`).setAttribute('onclick',`openAddItem(${id},'${esc(data.name)}')`);
+}
+
+async function toggleCatStatus(id,btn){
+  const data=await post(`/owner/menu/category/${id}/toggle/`,new FormData());
+  if(!data.ok)return;
+  const header=document.querySelector(`#cat-${id} .cat-header`);
+  header.querySelector('.cat-paused-tag')?.remove();
+  if(data.is_active){btn.textContent='⏸';btn.title='Pause';}
+  else{btn.textContent='▶';btn.title='Activate';header.querySelector('.cat-header-l').insertAdjacentHTML('beforeend','<div class="cat-paused-tag">Paused</div>');}
+}
+
+async function deleteCat(id){
+  const ok=await customConfirm('Delete category?','All items in this category will also be deleted.','📋');
+  if(!ok)return;
+  const data=await post(`/owner/menu/category/${id}/delete/`,new FormData());
+  if(data.ok)document.getElementById(`cat-${id}`)?.remove();
+}
+
+// ══ MENU ITEMS ══
+function openAddItem(catId,catName){
+  document.getElementById('add-item-cat-id').value=catId;
+  document.getElementById('add-item-cat-name').textContent=catName;
+  ['add-item-name','add-item-desc','add-item-price'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('add-item-img').value='';
+  document.getElementById('add-item-preview').style.display='none';
+  hideErr('err-add-item');openModal('modal-add-item');
+}
+
+async function submitAddItem(){
+  hideErr('err-add-item');
+  const catId=document.getElementById('add-item-cat-id').value;
+  const name=document.getElementById('add-item-name').value.trim();
+  const price=document.getElementById('add-item-price').value.trim();
+  if(!name||!price){showErr('err-add-item','Name and price are required.');return;}
+  const fd=new FormData();
+  fd.set('name',name);fd.set('description',document.getElementById('add-item-desc').value.trim());fd.set('price',price);
+  const img=document.getElementById('add-item-img').files[0];if(img)fd.set('image',img);
+  const data=await post(`/owner/menu/category/${catId}/item/add/`,fd);
+  if(!data.ok){showErr('err-add-item',data.error);return;}
+  closeModal('modal-add-item');
+  const grid=document.getElementById(`items-${catId}`);
+  const addCard=grid.querySelector('.add-item-card');
+  const imgH=data.image_url?`<img src="${data.image_url}" alt="${esc(data.name)}">`:'🍽';
+  addCard.insertAdjacentHTML('beforebegin',itemCardHTML(data,imgH));
+  updateCatCount(catId,1);
+}
+
+function itemCardHTML(item,imgHTML){
+  return `<div class="item-card" id="item-${item.id}" onclick="window.location='/owner/menu/item/${item.id}/'">
+    <div class="item-img">${imgHTML}</div>
+    <div class="item-body">
+      <div class="item-name" title="${esc(item.name)}">${item.name}</div>
+      <div class="item-desc">${item.description||''}</div>
+      <div class="item-footer">
+        <div class="item-price">$${parseFloat(item.price).toFixed(2)}</div>
+        <div class="item-actions" onclick="event.stopPropagation()">
+          <button class="item-btn" title="Pause" onclick="toggleItemStatus(${item.id},this)">⏸</button>
+          <button class="item-btn del" title="Delete" onclick="deleteItem(${item.id})">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function toggleItemStatus(id,btn){
+  const data=await post(`/owner/menu/item/${id}/toggle/`,new FormData());
+  if(!data.ok)return;
+  const card=document.getElementById(`item-${id}`);
+  if(data.is_active){card.classList.remove('paused');btn.textContent='⏸';}
+  else{card.classList.add('paused');btn.textContent='▶';}
+}
+
+async function deleteItem(id){
+  const ok=await customConfirm('Delete item?','This menu item will be permanently removed.','🍽');
+  if(!ok)return;
+  const data=await post(`/owner/menu/item/${id}/delete/`,new FormData());
+  if(data.ok){
+    const card=document.getElementById(`item-${id}`);
+    const catBlock=card.closest('.cat-block');
+    const catId=catBlock.id.replace('cat-','');
+    card.remove();updateCatCount(catId,-1);
+  }
+}
+
+function updateCatCount(catId,delta){
+  const el=document.querySelector(`#cat-${catId} .cat-count`);
+  if(!el)return;
+  const n=Math.max(0,(parseInt(el.textContent)||0)+delta);
+  el.textContent=`${n} item${n!==1?'s':''}`;
+}
+
+function esc(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+</script>
+{% endblock %}
